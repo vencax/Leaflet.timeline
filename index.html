@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Leaflet.timeline by skeate</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Leaflet.timeline</h1>
+          <h2>Display arbitrary GeoJSON on a map with a timeline slider and play button</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/skeate/Leaflet.timeline/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/skeate/Leaflet.timeline/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/skeate/Leaflet.timeline" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a id="leaflettimeline-020" class="anchor" href="#leaflettimeline-020" aria-hidden="true"><span class="octicon octicon-link"></span></a>Leaflet.timeline 0.2.0</h1>
+
+<p>Show any changing geospatial data over time, from points to polygons.</p>
+
+<p>If you want smooth motion of markers from point to point, this is not your
+plugin. Please check out <a href="https://github.com/hallahan/LeafletPlayback">LeafletPlayback</a>, or for real-time data, try
+<a href="https://github.com/perliedman/leaflet-realtime">Leaflet Realtime</a>, both plugins from which I may or may not have pilfered
+some ideas.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p><code>Leaflet.timeline</code> is a subclass of <code>L.GeoJSON</code>, so use it as you would that.
+The data you pass in should be something like this:</p>
+
+<div class="highlight highlight-json"><pre>{
+  <span class="pl-s1"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>FeatureCollection<span class="pl-pds">"</span></span>,
+  <span class="pl-s1"><span class="pl-pds">"</span>features<span class="pl-pds">"</span></span>: [
+    {
+      <span class="pl-s1"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>Feature<span class="pl-pds">"</span></span>,
+      <span class="pl-s1"><span class="pl-pds">"</span>properties<span class="pl-pds">"</span></span>: {
+        <span class="pl-s1"><span class="pl-pds">"</span>start<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>1970-01-01<span class="pl-pds">"</span></span>,
+        <span class="pl-s1"><span class="pl-pds">"</span>end<span class="pl-pds">"</span></span>: <span class="pl-s1"><span class="pl-pds">"</span>2014-12-04<span class="pl-pds">"</span></span>
+      },
+      <span class="pl-s1"><span class="pl-pds">"</span>geometry<span class="pl-pds">"</span></span>: { <span class="pl-ii">...</span> }
+    }
+  ]
+}</pre></div>
+
+<p>The date can really be anything <code>Date()</code> can process.</p>
+
+<p>It does add some extra options:</p>
+
+<h2>
+<a id="options" class="anchor" href="#options" aria-hidden="true"><span class="octicon octicon-link"></span></a>Options</h2>
+
+<h4>
+<a id="all-geojsons-options" class="anchor" href="#all-geojsons-options" aria-hidden="true"><span class="octicon octicon-link"></span></a><a href="http://leafletjs.com/reference.html#geojson">all GeoJSON's options</a>
+</h4>
+
+<h4>
+<a id="start" class="anchor" href="#start" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>start</code>
+</h4>
+
+<p><em>default: earliest <code>start</code> in GeoJSON</em></p>
+
+<p>The beginning/minimum value of the timeline.</p>
+
+<h4>
+<a id="end" class="anchor" href="#end" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>end</code>
+</h4>
+
+<p><em>default: latest <code>end</code> in GeoJSON</em></p>
+
+<p>The end/maximum value of the timeline.</p>
+
+<h4>
+<a id="position" class="anchor" href="#position" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>position</code>
+</h4>
+
+<p><em>default: bottomleft</em></p>
+
+<p><a href="http://leafletjs.com/reference.html#control">Position</a> for the timeline
+controls. Probably doesn't really matter as you'll likely want to expand them
+anyway.</p>
+
+<h4>
+<a id="formatdate" class="anchor" href="#formatdate" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>formatDate</code>
+</h4>
+
+<p><em>default: <code>(date) -&gt; ""</code></em></p>
+
+<p>A function that takes in a Unix timestamp and outputs a string. Ideally for
+formatting the timestamp, but hey, you can do whatever you want.</p>
+
+<h4>
+<a id="enableplayback" class="anchor" href="#enableplayback" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>enablePlayback</code>
+</h4>
+
+<p><em>default: <code>true</code></em></p>
+
+<p>Show playback controls (i.e. prev/play/pause/next).</p>
+
+<h4>
+<a id="steps" class="anchor" href="#steps" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>steps</code>
+</h4>
+
+<p><em>default: 1000</em></p>
+
+<p>How many steps to break the timeline into. Each step will then be <code>(end-start) /
+steps</code>. Only affects playback.</p>
+
+<h4>
+<a id="duration" class="anchor" href="#duration" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>duration</code>
+</h4>
+
+<p><em>default: 10000</em></p>
+
+<p>Minimum time, in ms, for the playback to take. Will almost certainly actually
+take at least a bit longer -- after each frame, the next one displays in
+<code>duration/steps</code> ms, so each frame really takes frame processing time PLUS
+step time.</p>
+
+<h4>
+<a id="updatemapondrag" class="anchor" href="#updatemapondrag" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>updateMapOnDrag</code>
+</h4>
+
+<p><em>default: true</em></p>
+
+<p>Two things update as you drag the slider: the time shown and the elements
+displayed on the map. A very busy map might slow this down, so for better UX
+disable this. The time shown will still update.</p>
+
+<h4>
+<a id="showticks" class="anchor" href="#showticks" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>showTicks</code>
+</h4>
+
+<p><em>default: true</em></p>
+
+<p>Show tick marks on slider, representing changes in value(s).</p>
+
+<h2>
+<a id="events" class="anchor" href="#events" aria-hidden="true"><span class="octicon octicon-link"></span></a>Events</h2>
+
+<h4>
+<a id="timelinechange" class="anchor" href="#timelinechange" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>timeline:change</code>
+</h4>
+
+<p>Fired when the selected time changes (either through manually sliding or
+through playback).</p>
+
+<h2>
+<a id="methods" class="anchor" href="#methods" aria-hidden="true"><span class="octicon octicon-link"></span></a>Methods</h2>
+
+<h4>
+<a id="settime" class="anchor" href="#settime" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>setTime</code>
+</h4>
+
+<p>Sets the current timeline time. Will parse any dates in just about any format
+you throw at it.</p>
+
+<h4>
+<a id="getdisplayed" class="anchor" href="#getdisplayed" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>getDisplayed</code>
+</h4>
+
+<p>Returns the original GeoJSON of the features that are currently being displayed
+on the map.</p>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<h3>
+<a id="earthquakes" class="anchor" href="#earthquakes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Earthquakes</h3>
+
+<p><a href="http://skeate.github.io/Leaflet.timeline/earthquakes.html">Example here</a>. USGS provides <a href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">GeoJSON(P) files</a> with earthquake data,
+including time and magnitude. For this example, that data is read, parsed to the
+right format (<code>start</code> and <code>end</code> values in the GeoJSON <code>properties</code>), and added
+to a <code>Leaflet.timeline</code>.</p>
+
+<h3>
+<a id="country-borders-after-wwii" class="anchor" href="#country-borders-after-wwii" aria-hidden="true"><span class="octicon octicon-link"></span></a>Country borders after WWII</h3>
+
+<p><a href="http://skeate.github.io/Leaflet.timeline/borders.html">Example here</a>. I found some historical country border data <a href="http://nils.weidmann.ws/projects/cshapes">here</a>, though
+unfortunately it was not in GeoJSON. Converted it with <a href="http://www.gdal.org/ogr2ogr.html">ogr2ogr</a>:</p>
+
+<pre><code>$ ogr2ogr -f "GeoJSON" \
+  -select CNTRY_NAME,COWSYEAR,COWSMONTH,COWSDAY,COWEYEAR,COWEMONTH,COWEDAY \
+  borders.json cshapes.shp
+</code></pre>
+
+<p>Then wrangled the data into the right format (examples/borders-parse.js). After
+that, just pass the data to <code>Leaflet.timeline</code> and let it handle everything.</p>
+
+<h2>
+<a id="change-log" class="anchor" href="#change-log" aria-hidden="true"><span class="octicon octicon-link"></span></a>Change log</h2>
+
+<h3>
+<a id="020" class="anchor" href="#020" aria-hidden="true"><span class="octicon octicon-link"></span></a>0.2.0</h3>
+
+<ul>
+<li>Added previous/next/pause</li>
+<li>Change behavior of play button (will play from wherever it is rather than
+reset to the beginning)</li>
+<li>Lots of code restructuring</li>
+<li>Add more extensive default styling, using Sass</li>
+</ul>
+
+<h3>
+<a id="010" class="anchor" href="#010" aria-hidden="true"><span class="octicon octicon-link"></span></a>0.1.0</h3>
+
+<ul>
+<li>It kinda works?</li>
+</ul>
+        </section>
+
+        <footer>
+          Leaflet.timeline is maintained by <a href="https://github.com/skeate">skeate</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+                  <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-54709915-2");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+      </div>
+    </div>
+  </body>
+</html>
