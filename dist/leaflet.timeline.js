@@ -1,18 +1,5 @@
-
-/*
-Leaflet.timeline
-
-Show any arbitrary GeoJSON objects changing over time
-
-(c) 2014 Jonathan Skeate
-https://github.com/skeate/Leaflet.timeline
-http://leafletjs.com
- */
-
 (function() {
   var IntervalTree;
-
-  L.TimelineVersion = '0.3.2';
 
   IntervalTree = (function() {
     function IntervalTree() {
@@ -76,6 +63,24 @@ http://leafletjs.com
 
   })();
 
+  L.TimelineIntervalTree = IntervalTree;
+
+}).call(this);
+
+
+/*
+Leaflet.timeline
+
+Show any arbitrary GeoJSON objects changing over time
+
+(c) 2014 Jonathan Skeate
+https://github.com/skeate/Leaflet.timeline
+http://leafletjs.com
+ */
+
+(function() {
+  L.TimelineVersion = '0.3.2';
+
   L.Timeline = L.GeoJSON.extend({
     includes: L.Mixin.Events,
     times: [],
@@ -95,7 +100,7 @@ http://leafletjs.com
     initialize: function(timedGeoJSON, options) {
       L.GeoJSON.prototype.initialize.call(this, void 0, options);
       L.extend(this.options, options);
-      this.ranges = new IntervalTree();
+      this.ranges = new L.TimelineIntervalTree();
       if (options.intervaFromFeature != null) {
         this.intervaFromFeature = options.intervaFromFeature.bind(this);
       }
@@ -227,6 +232,13 @@ http://leafletjs.com
     }
   });
 
+  L.timeline = function(timedGeoJSON, options) {
+    return new L.Timeline(timedGeoJSON, options);
+  };
+
+}).call(this);
+
+(function() {
   L.Timeline.TimeSliderControl = L.Control.extend({
     initialize: function(timeline1) {
       this.timeline = timeline1;
@@ -236,7 +248,9 @@ http://leafletjs.com
       this.showTicks = this.timeline.options.showTicks;
       this.stepDuration = this.timeline.options.duration / this.timeline.options.steps;
       this.stepSize = (this.end - this.start) / this.timeline.options.steps;
-      return this.smallStepSize = this.timeline.options.smallstepsize || this.stepSize / 10;
+      this.smallStepSize = this.timeline.options.smallstepsize || this.stepSize / 10;
+      this.time = this.timeline.options.time;
+      return this.playing = false;
     },
     _buildDataList: function(container, times) {
       var datalistSelect, used_times;
@@ -255,39 +269,36 @@ http://leafletjs.com
       this._datalist.id = "timeline-datalist-" + Math.floor(Math.random() * 1000000);
       return this._timeSlider.setAttribute('list', this._datalist.id);
     },
-    _makePlayPause: function(container) {
+    _makePlayButtons: function(container) {
+      this._playFFButton = L.DomUtil.create('button', 'playff', container);
+      this._playFFButton.innerHTML = '<<';
+      this._playFFButton.addEventListener('click', (function(_this) {
+        return function() {
+          return _this._fastRev();
+        };
+      })(this));
+      L.DomEvent.disableClickPropagation(this._playFFButton);
       this._playButton = L.DomUtil.create('button', 'play', container);
       this._playButton.addEventListener('click', (function(_this) {
         return function() {
           return _this._play();
         };
       })(this));
-      L.DomEvent.disableClickPropagation(this._playButton);
-      this._pauseButton = L.DomUtil.create('button', 'pause', container);
-      this._pauseButton.addEventListener('click', (function(_this) {
-        return function() {
-          return _this._pause();
-        };
-      })(this));
-      return L.DomEvent.disableClickPropagation(this._pauseButton);
+      return L.DomEvent.disableClickPropagation(this._playButton);
     },
     _makePrevNext: function(container) {
-      this._prevButton = L.DomUtil.create('button', 'prev');
-      this._nextButton = L.DomUtil.create('button', 'next');
-      this._playButton.parentNode.insertBefore(this._prevButton, this._playButton);
-      this._playButton.parentNode.insertBefore(this._nextButton, this._pauseButton.nextSibling);
-      L.DomEvent.disableClickPropagation(this._prevButton);
-      L.DomEvent.disableClickPropagation(this._nextButton);
+      this._prevButton = L.DomUtil.create('button', 'prev', container);
       this._prevButton.addEventListener('click', this._prev.bind(this));
-      return this._nextButton.addEventListener('click', this._next.bind(this));
+      L.DomEvent.disableClickPropagation(this._prevButton);
+      this._nextButton = L.DomUtil.create('button', 'next', container);
+      this._nextButton.addEventListener('click', this._next.bind(this));
+      return L.DomEvent.disableClickPropagation(this._nextButton);
     },
     _makeRevff: function(container) {
-      this._revButton = L.DomUtil.create('button', 'rev');
-      this._ffButton = L.DomUtil.create('button', 'ff');
+      this._revButton = L.DomUtil.create('button', 'rev', container);
+      this._ffButton = L.DomUtil.create('button', 'ff', container);
       this._revButton.innerHTML = '<';
       this._ffButton.innerHTML = '>';
-      this._playButton.parentNode.insertBefore(this._revButton, this._prevButton);
-      this._playButton.parentNode.insertBefore(this._ffButton, this._nextButton.nextSibling);
       L.DomEvent.disableClickPropagation(this._revButton);
       L.DomEvent.disableClickPropagation(this._ffButton);
       this._revButton.addEventListener('mousedown', this._rev.bind(this));
@@ -299,6 +310,9 @@ http://leafletjs.com
       this._timeSlider.min = this.start;
       this._timeSlider.max = this.end;
       this._timeSlider.value = this.start;
+      if (this.timeline.options.disabled != null) {
+        this._timeSlider.disabled = true;
+      }
       this._timeSlider.addEventListener('mousedown', (function(_this) {
         return function() {
           return _this.map.dragging.disable();
@@ -352,62 +366,83 @@ http://leafletjs.com
       }
       return lastTime;
     },
-    _rev: function() {
-      this._pause();
-      this._timeSlider.value = +this._timeSlider.value - this.smallStepSize;
-      return this._sliderChanged({
-        type: 'change',
-        target: {
-          value: this._timeSlider.value
-        }
-      });
-    },
-    _ff: function() {
-      this._pause();
-      this._timeSlider.value = +this._timeSlider.value + this.smallStepSize;
-      return this._sliderChanged({
-        type: 'change',
-        target: {
-          value: this._timeSlider.value
-        }
-      });
-    },
-    _prev: function() {
-      var prevTime;
-      this._pause();
-      prevTime = this._nearestEventTime(this.timeline.time, -1);
-      this._timeSlider.value = prevTime;
-      return this.timeline.setTime(prevTime);
-    },
-    _pause: function() {
+    _do_play: function(step, edgeValue, methodToSched) {
       clearTimeout(this._timer);
-      return this.container.classList.remove('playing');
-    },
-    _play: function() {
-      clearTimeout(this._timer);
-      if (+this._timeSlider.value === this.end) {
-        this._timeSlider.value = this.start;
-      }
-      this._timeSlider.value = +this._timeSlider.value + this.stepSize;
+      this._timeSlider.value = +this._timeSlider.value + step;
       this._sliderChanged({
         type: 'change',
         target: {
           value: this._timeSlider.value
         }
       });
-      if (+this._timeSlider.value !== this.end) {
-        this.container.classList.add('playing');
-        return this._timer = setTimeout(this._play.bind(this, this.stepDuration));
+      if (+this._timeSlider.value !== edgeValue) {
+        return this._timer = setTimeout(methodToSched, this.stepDuration);
       } else {
-        return this.container.classList.remove('playing');
+        return this._stop();
       }
+    },
+    _rev: function() {
+      if (!this.playing) {
+        this._do_rev();
+        return this.playing = true;
+      } else {
+        return this._stop();
+      }
+    },
+    _do_rev: function() {
+      return this._do_play(-this.smallStepSize, this.begin, this._do_rev.bind(this));
+    },
+    _fastRev: function() {
+      if (!this.playing) {
+        this._do_fastrev();
+        return this.playing = true;
+      } else {
+        return this._stop();
+      }
+    },
+    _do_fastrev: function() {
+      return this._do_play(-this.stepSize, this.begin, this._do_fastrev.bind(this));
+    },
+    _ff: function() {
+      if (!this.playing) {
+        this._do_ff();
+        return this.playing = true;
+      } else {
+        return this._stop();
+      }
+    },
+    _do_ff: function() {
+      return this._do_play(this.smallStepSize, this.end, this._do_ff.bind(this));
+    },
+    _play: function() {
+      if (!this.playing) {
+        this._do_playforward();
+        return this.playing = true;
+      } else {
+        return this._stop();
+      }
+    },
+    _do_playforward: function() {
+      return this._do_play(this.stepSize, this.end, this._do_playforward.bind(this));
+    },
+    _stop: function() {
+      clearTimeout(this._timer);
+      this.container.classList.remove('playing');
+      return this.playing = false;
     },
     _next: function() {
       var nextTime;
-      this._pause();
+      this._stop();
       nextTime = this._nearestEventTime(this.timeline.time, 1);
       this._timeSlider.value = nextTime;
       return this.timeline.setTime(nextTime);
+    },
+    _prev: function() {
+      var prevTime;
+      this._stop();
+      prevTime = this._nearestEventTime(this.timeline.time, -1);
+      this._timeSlider.value = prevTime;
+      return this.timeline.setTime(prevTime);
     },
     _sliderChanged: function(e) {
       var time;
@@ -417,35 +452,35 @@ http://leafletjs.com
       }
       return this._output.innerHTML = this.timeline.options.formatDate(new Date(time));
     },
-    onAdd: function(map1) {
-      var buttonContainer, container, sliderCtrlC;
-      this.map = map1;
-      container = L.DomUtil.create('div', 'leaflet-control-layers ' + 'leaflet-control-layers-expanded ' + 'leaflet-timeline-controls');
-      if (this.timeline.options.enablePlayback) {
-        sliderCtrlC = L.DomUtil.create('div', 'sldr-ctrl-container', container);
-        buttonContainer = L.DomUtil.create('div', 'button-container', sliderCtrlC);
-        this._makePlayPause(buttonContainer);
-        this._makePrevNext(buttonContainer);
-      }
-      this._makeSlider(container);
-      this._makeRevff(container);
-      this._makeOutput(sliderCtrlC);
+    onAdd: function(map) {
+      var buttonContainer, sliderCtrlC;
+      this.map = map;
+      this.container = L.DomUtil.create('div', 'leaflet-control-layers-expanded ' + 'leaflet-timeline-controls');
+      this._makeSlider(this.container);
       if (this.showTicks) {
-        this._buildDataList(container, this.timeline.times);
+        this._buildDataList(this.container, this.timeline.times);
       }
-      this.timeline.setTime(this.start);
-      return this.container = container;
+      if (this.timeline.options.enablePlayback) {
+        sliderCtrlC = L.DomUtil.create('div', 'sldr-ctrl-container', this.container);
+        buttonContainer = L.DomUtil.create('div', 'button-container', sliderCtrlC);
+        this._makePlayButtons(buttonContainer);
+        this._makePrevNext(buttonContainer);
+        this._makeRevff(buttonContainer);
+        this._makeOutput(buttonContainer);
+      }
+      this._timeSlider.value = this.time;
+      this._sliderChanged({
+        type: 'change',
+        target: {
+          value: this._timeSlider.value
+        }
+      });
+      return this.container;
     }
   });
-
-  L.timeline = function(timedGeoJSON, options) {
-    return new L.Timeline(timedGeoJSON, options);
-  };
 
   L.Timeline.timeSliderControl = function(timeline, start, end, timelist) {
     return new L.Timeline.TimeSliderControl(timeline, start, end, timelist);
   };
 
 }).call(this);
-
-//# sourceMappingURL=leaflet.timeline.js.map
