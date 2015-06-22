@@ -8,10 +8,14 @@ module.exports = (grunt) ->
 
     coffee:
       options:
-        sourceMap: true
+        sourceMap: false
       compile:
         files:
-          'dist/leaflet.timeline.js': 'src/leaflet.timeline.coffee'
+          'dist/leaflet.timeline.js': [
+            'src/intervaltree.coffee'
+            'src/timeline.coffee'
+            'src/timeline.controls.coffee'
+          ]
 
     coffeelint:
       options:
